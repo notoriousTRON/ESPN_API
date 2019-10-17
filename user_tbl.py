@@ -20,8 +20,20 @@ def drop_table(tbl_name):
 def refresh_user_data(user_year_id, year, display_name, user_id, first, last, name):
     db = open_connection.open_connection()
     cursor = db.cursor()
-    insert_query = "INSERT INTO users_tbl(user_year_id, year, display_name, user_id, first, last, name) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    insert_query = """INSERT INTO users_tbl(user_year_id, year, display_name, user_id, first, last, name) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)"""
     cursor.execute(insert_query, (user_year_id, year, display_name, user_id, first, last, name))
+    db.commit()
+    cursor.close()
+    db.close()
+    return
+
+def refresh_team_data(user_year_id, user_id, abbrev, team_id, team_name):
+    db = open_connection.open_connection()
+    cursor = db.cursor()
+    insert_query = """INSERT INTO team_tbl(user_year_id, user_id, abbrev, team_id, team_name) 
+                        VALUES (%s, %s, %s, %s, %s)"""
+    cursor.execute(insert_query, (user_year_id, user_id, abbrev, team_id, team_name))
     db.commit()
     cursor.close()
     db.close()
@@ -51,6 +63,19 @@ CREATE TABLE users_tbl
     first character(255),
     last character(255),
     name character(255),
+    
+    primary key(user_year_id)
+    )
+    """
+drop_table("team_tbl")
+team_create = """
+CREATE TABLE team_tbl
+    (
+    user_year_id character(255),
+    user_id character(255),
+    abbrev character(4),
+    team_id character(2),
+    team_name character(255),
 
     primary key(user_year_id)
     )
@@ -58,10 +83,23 @@ CREATE TABLE users_tbl
 db = open_connection.open_connection()
 cursor = db.cursor()
 cursor.execute(user_create)
+cursor.execute(team_create)
 db.commit()
 cursor.close()
 db.close()
 '''
+
+for i in range(0,len(d['teams'])):
+    abbrev = d['teams'][i]['abbrev']
+    team_id = d['teams'][i]['id']
+    location = d['teams'][i]['location']
+    nickname = d['teams'][i]['nickname']
+    user_id = d['teams'][i]['owners'][0].strip('{}')
+    team_name = str(location)+' '+str(nickname)
+    user_year_id = str(year)+str(user_id)
+    
+    refresh_team_data(user_year_id, user_id, abbrev, team_id, team_name)
+
 for i in range(0,len(d['members'])):
     first = d['members'][i]['firstName']
     last = d['members'][i]['lastName']
